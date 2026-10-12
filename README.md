@@ -14,7 +14,10 @@ and records pass/fail results you can review later.
 - **Node.js** 18.19 or later
 - **An agent runtime that can call MCP tools**, such as [Claude Code](https://claude.com/claude-code),
   Claude Cowork, or [Codex](https://developers.openai.com/codex)
-- **The `d365-erp-mcp` MCP server**, connected to the D365FO environment you want to test
+- **The `d365-erp-mcp` MCP server**: Microsoft's
+  [Dynamics 365 ERP MCP server](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp),
+  connected to the D365FO environment you want to test. That page covers which environments
+  support it and how to allow your agent as an MCP client
 - **One or more `.axtr` recordings**, recorded with D365FO's Task Recorder or exported from an LCS
   Business Process Modeler library
 

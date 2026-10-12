@@ -79,10 +79,15 @@ Before you can run a full suite against a live environment, make sure you have e
 following in place:
 
 - **Node.js** ≥ 18.19 (`node --version`)
-- **[Claude Cowork](https://claude.com/claude-code)** (or another agent runtime capable of
-  driving MCP tools). This is what actually executes a test suite
-- **The `d365-erp-mcp` MCP server**, connected to the D365 Finance & Operations environment you
-  want to test against, available in the same Claude Cowork session/project.
+- **An agent runtime capable of driving MCP tools**, such as
+  [Claude Code](https://claude.com/claude-code), Claude Cowork, or
+  [Codex](https://developers.openai.com/codex). This is what actually executes a test suite.
+  The examples in this manual use Claude Cowork
+- **The `d365-erp-mcp` MCP server**: Microsoft's
+  [Dynamics 365 ERP MCP server](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp),
+  connected to the D365 Finance & Operations environment you want to test against and available
+  in the same agent session/project. Microsoft's page covers which environments and versions
+  support it, and how to allow your agent as an MCP client.
 - One or more `.axtr` files. Get these either by recording them yourself in D365FO (System
   administration → the Task Recorder add-in), or from an existing LCS Business Process Modeler
   library.
