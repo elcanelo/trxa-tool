@@ -1,0 +1,120 @@
+TRXA-TOOL END-USER LICENSE AGREEMENT
+
+Copyright (c) 2026 Gonzalo Garcia ("Licensor"). All rights reserved.
+
+This software (the compiled trxa-tool CLI and its accompanying Studio application, together the
+"Software") is licensed, not sold. This End-User License Agreement ("Agreement") governs your use
+of the Software. By downloading, installing, or using the Software, you agree to be bound by this
+Agreement; if you do not agree, do not download, install, or use it.
+
+1. Grant of License
+   Subject to your compliance with this Agreement, Licensor grants you a limited, non-exclusive,
+   non-transferable, revocable license to install and use the Software for your own internal
+   business or personal purposes.
+
+2. Restrictions
+   You may not, and may not permit anyone else to:
+   (a) copy, distribute, sell, sublicense, rent, lease, or otherwise transfer the Software or any
+       portion of it to any third party;
+   (b) reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code of
+       the Software, except to the extent such restriction is prohibited by applicable law;
+   (c) modify, adapt, or create derivative works based on the Software;
+   (d) remove or obscure any copyright, trademark, or other proprietary notice included with the
+       Software;
+   (e) use the Software to build a competing product or service.
+
+3. Ownership
+   The Software is protected by copyright and other intellectual property laws. Licensor retains
+   all right, title, and interest in and to the Software, including all intellectual property
+   rights in it. No rights are granted to you other than as expressly set out in this Agreement.
+   This Agreement grants no rights to use Licensor's trademarks, trade names, product names, or
+   logos, and no such rights should be implied from it.
+
+4. Support and Services
+   This Agreement does not include support, maintenance, updates, or professional services.
+   Support and implementation assistance, where offered, are provided separately under their own
+   terms and are not part of the license granted here.
+
+5. Third-Party Systems
+   The Software is designed to interact with systems you configure and control yourself, including
+   a Dynamics 365 Finance & Operations environment (via your own connection) and a large language
+   model provider you separately account for and pay. Licensor has no control over, and no
+   responsibility for, actions those systems take -- including any transaction, record, or change
+   made in your D365FO environment as a result of using the Software, whether caused by the
+   Software's operation, your own configuration or use of it, or any error, oversight, or
+   misunderstanding on your part. You are solely responsible for reviewing what the Software does
+   before running it against any production or otherwise consequential environment, and you assume
+   all risk and responsibility for any resulting transaction, record, or change.
+
+6. No Data Collection
+   The Software does not collect, transmit, or share your data with Licensor. It runs entirely
+   against infrastructure you configure and control -- your own D365FO environment, your own LLM
+   provider account, and your own local files. Licensor has no visibility into your use of the
+   Software beyond what you choose to share directly (e.g. when requesting support).
+
+7. Early-Stage Software
+   The Software is under active, early-stage development (currently versioned below 1.0). Its
+   features, behavior, and compatibility with any given D365 Finance & Operations environment or
+   LLM provider may change, including in breaking ways, without notice.
+
+8. No Warranty
+   THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+   NONINFRINGEMENT. YOU USE THE SOFTWARE ENTIRELY AT YOUR OWN RISK.
+
+9. Limitation of Liability
+   TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, AND REGARDLESS OF THE THEORY OF LIABILITY
+   ASSERTED -- WHETHER BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR
+   OTHERWISE -- IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+   CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF DATA, REVENUE, OR PROFITS, ARISING OUT OF OR
+   IN CONNECTION WITH THIS AGREEMENT OR THE USE OF THE SOFTWARE, INCLUDING ANY ACTION TAKEN IN A
+   THIRD-PARTY SYSTEM (SUCH AS A D365FO ENVIRONMENT) AS A RESULT OF USING THE SOFTWARE, EVEN IF
+   ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. LICENSOR'S TOTAL AGGREGATE LIABILITY FOR ANY AND ALL
+   CLAIMS ARISING OUT OF OR RELATED TO THIS AGREEMENT OR THE SOFTWARE, INCLUDING ANY DIRECT DAMAGES
+   NOT OTHERWISE EXCLUDED ABOVE, SHALL NOT EXCEED THE AMOUNT YOU PAID FOR THE SOFTWARE ITSELF
+   (EXCLUDING ANY SEPARATELY-CONTRACTED SUPPORT OR SERVICES UNDER SECTION 4), WHICH FOR THE
+   CURRENTLY FREE VERSION IS ZERO.
+
+10. Indemnification
+    You agree to defend, indemnify, and hold harmless Licensor from and against any claims,
+    damages, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of
+    or related to: (a) your use of the Software; (b) your violation of this Agreement; or (c) any
+    transaction, record, or change made in a third-party system (including a D365FO environment) as
+    a result of your use of the Software.
+
+11. Feedback
+    If you provide Licensor with any feedback, suggestions, bug reports, or ideas regarding the
+    Software, you grant Licensor a perpetual, irrevocable, royalty-free, worldwide right to use
+    that feedback for any purpose, without any obligation to compensate or credit you.
+
+12. Termination
+    This license terminates automatically if you breach any provision of this Agreement. Upon
+    termination, you must stop using the Software and destroy all copies in your possession.
+
+13. Assignment
+    You may not assign or transfer this Agreement or any rights under it without Licensor's prior
+    written consent. Licensor may assign this Agreement, in whole or in part, including to a
+    successor entity or in connection with a transfer of the Software or Licensor's business,
+    without your consent.
+
+14. Severability
+    If any provision of this Agreement is found unenforceable, that provision will be limited or
+    eliminated to the minimum extent necessary, and the remaining provisions will remain in full
+    force and effect.
+
+15. No Waiver
+    Licensor's failure to enforce any provision of this Agreement on any occasion does not waive
+    Licensor's right to enforce that or any other provision on any other occasion.
+
+16. Modifications
+    Licensor may modify, update, or discontinue the Software, and may revise this Agreement for
+    future versions of the Software, at any time. Continued use of a version released under revised
+    terms constitutes acceptance of those terms for that version.
+
+17. Governing Law
+    This Agreement is governed by the laws of the State of Texas, USA, without regard to its
+    conflict-of-law principles.
+
+18. Entire Agreement
+    This Agreement is the entire agreement between you and Licensor regarding the Software and
+    supersedes any prior agreements or understandings, written or oral.
