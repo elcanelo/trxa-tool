@@ -37,14 +37,24 @@ cases, suites and plans, and both can run tests with an AI agent.
 
 ### Windows app
 
-Download `TRXA.Studio.Setup.<version>.exe` from the
-[Releases](https://github.com/elcanelo/trxa-tool/releases) page and run it. The app opens on a
-working folder in `Documents\TRXA Studio`; change it in Settings. **Settings > Agent runs** shows
-what an agent run still needs on your computer, and its **Install skill** button adds the replay
-skill to your working folder.
+Download one of these from the [Releases](https://github.com/elcanelo/trxa-tool/releases) page:
 
-The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC".
-Choose **More info**, then **Run anyway**.
+- **Portable** (`TRXA-Studio-<version>-win-x64-portable.zip`): nothing to install. Before you
+  extract it, right-click the zip, choose **Properties**, tick **Unblock** and select **OK**. Then
+  extract it to a folder of your choice and run `TRXA Studio.exe`. To update, replace the folder;
+  your settings and work are kept, because they aren't stored in it.
+- **Installer** (`TRXA-Studio-Setup-<version>.exe`): installs for your user only, with a Start
+  menu shortcut and an uninstaller. No administrator rights are needed.
+
+The app opens on a working folder in `Documents\TRXA Studio`; change it in Settings.
+**Settings > Agent runs** shows what an agent run still needs on your computer, and its **Install
+skill** button adds the replay skill to your working folder.
+
+The app isn't code-signed yet. Windows SmartScreen may show "Windows protected your PC" (choose
+**More info**, then **Run anyway**); unblocking the zip before extracting it avoids that. On a
+company-managed PC, your IT policy may block unsigned apps entirely; if Windows says "Access is
+denied" or Microsoft Defender reports a blocked app, ask your IT team to allow TRXA Studio, or use
+the npm package instead.
 
 ### npm package
 
