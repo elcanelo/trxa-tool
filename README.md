@@ -40,8 +40,9 @@ never run, it starts at `Documents\TRXA Studio` (change it in Settings).
 The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC".
 Choose **More info**, then **Run anyway**.
 
-The app covers Studio only. Agent runs and the CLI commands below still need the `trxa` command,
-so install the npm package as well if you use them.
+The app includes its own copy of the `trxa` command for agent runs, and Settings > Agent runs can
+install the replay skill into your working folder. To use the CLI commands below from your own
+terminal, install the npm package as well.
 
 ## Quick start
 

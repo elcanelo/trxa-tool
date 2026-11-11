@@ -334,7 +334,10 @@ Test Cases, Suites and Plans each have a **Run** button that hands the item to a
 agent, which replays it against the D365 session your `d365-erp-mcp` server is connected to.
 
 - **Readiness**: Run is disabled, with an "Agent not ready" link, until Settings > Agent runs shows
-  Copilot ready (CLI, sign-in, D365 MCP server, replay skill).
+  Copilot ready (the `trxa` command, Copilot CLI and sign-in, D365 MCP server, replay skill). The
+  agent drives each run with `trxa`, so a missing `trxa` blocks runs; the Windows app includes its
+  own. When the replay skill is missing, **Install skill** on its row installs it into the working
+  folder (the same as `trxa init-skill`).
 - **Dialog**: name the run (see §8, "Run names"), enter the environment and company you *expect*
   (the agent checks the live session first and stops if it differs), and choose the depth. **Navigation only** (default) blocks
   every D365 tool that can change data. **Full run** can save and post real records; choosing it
