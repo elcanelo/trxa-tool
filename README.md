@@ -29,6 +29,20 @@ npm install -g trxa-tool
 
 This installs the `trxa` command.
 
+### Windows desktop app (optional)
+
+TRXA Studio, the UI for building test cases, suites and plans, is also available as a Windows
+app. Download `TRXA Studio Setup <version>.exe` from the
+[Releases](https://github.com/elcanelo/trxa-tool/releases) page and run it. The app doesn't need
+Node.js. It shares its working folder setting with `trxa studio`; on a machine where Studio has
+never run, it starts at `Documents\TRXA Studio` (change it in Settings).
+
+The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC".
+Choose **More info**, then **Run anyway**.
+
+The app covers Studio only. Agent runs and the CLI commands below still need the `trxa` command,
+so install the npm package as well if you use them.
+
 ## Quick start
 
 Run these from your own project folder:

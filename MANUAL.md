@@ -38,8 +38,8 @@ transcript. Here's how those pieces connect:
      │  you also edit one or more...
      ▼
 🗃️  Fixture   (testdata/*.json)
-    These represent the concrete values for a test case's inputs (e.g. "basic" vs. "eu-company"), so the
-    same test case can run against different data.
+    A named set of concrete values (e.g. "USMF" vs. "EU company") holding the inputs of every test
+    case it covers, so the same test cases can run against different data.
      │
      │  a suite ties a test case + a fixture together, and defines their sequence.
      ▼
@@ -164,15 +164,16 @@ specific usage.
 | `suggest-inputs <file.axtr> [-o draft.json]` | Draft candidate `inputs` for a Test Case from a recording |
 | `validate-testcase <testcase.json>` | Validate a Test Case file |
 | `validate-fixture <fixture.json>` | Validate a Fixture file |
+| `migrate-fixtures <testdata-dir> [--dry-run]` | Merge old one-test-case fixture files into one file per fixture (see [7.4](#74-author-a-fixture-concrete-test-data)) |
 | `validate-suite <suite.json>` | Validate a Test Suite, including DAG cycle/unknown-id checks |
 | `plan-suite <suite.json>` | Print a suite's topological execution order |
 | `init-skill [--force]` | Copy the `replay-trxa-testplan` skill into this project's `.claude/skills/` and `.agents/skills/`, so Claude Code and Codex both pick it up automatically -- run this once per project; refuses to overwrite an existing copy at either location unless `--force` is passed |
-| `init-run <suite.json> -o testruns/<suiteId>-<runId>.json` | Create a fresh Test Run, one `"pending"` entry per suite entry |
+| `init-run <suite.json> -o testruns/<suiteId>-<runId>.json [--name "<run name>"]` | Create a fresh Test Run, one `"pending"` entry per suite entry. `--name` labels the run (e.g. `"Vendor onboarding, PQU 10.0.48"`); Studio lists it by that name |
 | `resolve-next <suite.json> <testrun.json> --testcases-dir <dir> [--fixtures-dir <dir>]` | Get the next runnable test case (inputs already resolved), or `blocked`/`waiting`/`complete` |
 | `measure-tokens --since <isoTimestamp> --until <isoTimestamp> [--transcript <path>]` | Sum real token usage from Claude Code's own session log for a time window (mostly for manual/debugging use -- `record-result` already calls this internally; only reliable when no other Claude Code session is active against this project, see "Token/cost reporting" below) |
 | `record-result <testrun.json> <testCaseId> --status passed\|failed\|blocked --outputs '{...}' [--assertions '[...]']` | Persist a test case's outcome. Every JSON flag has a `-file` form (`--outputs-file <path>`, `--assertions-file`, `--inputs-file`, `--messages-file`); see [Windows PowerShell](#windows-powershell-pass-json-through-files) below |
 | `validate-plan <plan.json>` | Validate a Test Plan, including that every referenced suite exists and is itself valid |
-| `init-plan-run <plan.json> -o runs/` | Create a fresh PlanRun record for a plan, auto-generating its id -- do this once per plan execution, before running any of its suites |
+| `init-plan-run <plan.json> -o runs/ [--name "<run name>"]` | Create a fresh PlanRun record for a plan, auto-generating its id -- do this once per plan execution, before running any of its suites. `--name` labels the run (e.g. `"AP regression, PQU 10.0.48"`); without it Studio shows the plan's name |
 | `plan-status <plan.json> <run.json> --testruns-dir <dir>` | Aggregate pass/fail across every suite in a plan for one PlanRun |
 | `analyze-library <recordingsDir> [--report ...] [--csv ...]` | Privacy-safe coverage and gap analysis across a whole `recordings/` library (see [Data hygiene](#5-data-hygiene) for its two output files) |
 | `studio` | Start the Studio browser UI in the background and open `http://localhost:5173` (see [STUDIO.md](STUDIO.md)) |
@@ -308,24 +309,37 @@ trxa validate-testcase testcases/create-order.json
 
 ### 7.4 Author a Fixture (concrete test data)
 
-Create `testdata/<your-id>.<fixture-name>.json`:
+A fixture is one data set, such as one company or one scenario, with values for every test case
+it covers. Create `testdata/<fixture-name>.json`:
 
 ```json
 {
-  "testCaseId": "create-order",
   "name": "basic",
-  "values": { "customerAccount": "US-001" }
+  "description": "US company, standard customer",
+  "testCases": {
+    "create-order": { "customerAccount": "US-001" },
+    "post-packing-slip": { "warehouse": "11" }
+  }
 }
 ```
 
-You can have multiple fixtures per test case (e.g. `basic`, `eu-company`); the suite picks
-which one to use per run. The fixture is not part of the test case itself; it's chosen at the
-suite level (see [Author the Test Suite](#75-author-the-test-suite)), which is what lets the
-same Test Case run against different data.
+`name` is what suites refer to and must match the file name. It may use letters, digits,
+spaces, dots, underscores and hyphens, and fixture names are unique ignoring case. A test case
+can have values in several fixtures (e.g. `basic`, `eu-company`); the suite picks which one to use
+per run. The fixture is not part of the test case itself; it's chosen at the suite level (see
+[Author the Test Suite](#75-author-the-test-suite)), which is what lets the same Test Case run
+against different data.
 
 ```sh
-trxa validate-fixture testdata/create-order.basic.json
+trxa validate-fixture testdata/basic.json
 ```
+
+**Older fixture files.** Earlier versions stored one test case's values per fixture file
+(`testdata/<test-case-id>.<fixture-name>.json` with `testCaseId` and `values`). Those files still
+work: `resolve-next` merges files with the same `name`. To rewrite them in the current format, run
+`trxa migrate-fixtures testdata --dry-run` to see what would change, then without `--dry-run`. It
+checks everything before writing, so if two files hold values for the same test case under the
+same fixture name, nothing is changed and both files are named.
 
 ### 7.5 Author the Test Suite
 
@@ -356,7 +370,7 @@ trxa validate-fixture testdata/create-order.basic.json
 
 | `kind` | Fields | Meaning |
 |---|---|---|
-| `"fixture"` | `fixtureName`, `param` | Pull a value from a named Fixture's `values` |
+| `"fixture"` | `fixtureName`, `param` | Pull a value from the named Fixture's values for this test case |
 | `"testCaseOutput"` | `testCaseId`, `outputName` | Pull a value from an **already-passed** upstream test case's captured output; this is what threads data through a sequence |
 | `"literal"` | `value` | A hardcoded value right in the suite file (fine for constants, not for real business data) |
 | `"autogenerated"` | *(none)* | No value here at all -- `resolve-next` reports this param in `autogeneratedParams` (with the input's own `description`/`example` as guidance) instead of resolving it, and the orchestrating LLM replaying the suite invents a value at that point, typically for a business key that just needs to be unique per run |

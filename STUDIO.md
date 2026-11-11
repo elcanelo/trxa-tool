@@ -1,4 +1,4 @@
-# TRXA-TOOL Studio manual
+# TRXA Studio manual
 
 Studio is a local browser UI for the same pipeline [MANUAL.md](MANUAL.md) walks through via the
 CLI: parsing a `.axtr` recording, drafting inputs, editing a Test Case's `outputs[]`/
@@ -10,6 +10,11 @@ writes, and vice versa -- switch between them freely on the same files.
 ---
 
 ## 1. Starting Studio
+
+Studio runs from the CLI in your browser, or as the TRXA Studio Windows app (see README.md's
+"Windows desktop app"). The app starts its own Studio server on a free local port and shows it in
+a window; everything below applies to both, except the `trxa studio` commands, the PID tracking
+and the fixed address.
 
 ```sh
 trxa studio          # starts the server + client in the background, opens your browser
@@ -40,10 +45,10 @@ whoever can run it can write anywhere under the working folder's `testcases/`, `
 |---|---|
 | **Recordings** | Parse a `.axtr` file, draft inputs from it, and create a new Test Case + Fixture pair. |
 | **Test Cases** | Edit an existing Test Case's `outputs[]`/`expectations[]`, or delete it. |
-| **Fixtures** | Full CRUD on `testdata/*.json` Fixtures -- concrete input values for a Test Case. |
+| **Fixtures** | Named data sets (`testdata/<name>.json`), each holding input values for many Test Cases. Create, duplicate, rename, delete. |
 | **Suites** | A drag-and-drop dependency-graph canvas for `suites/*.json` -- `dependsOn`, `inputBindings`, and conditional-skip (`runIf`) gates. |
 | **Plans** | Compose a `plans/*.json` from existing suites, with reorderable run order and a rollup-status viewer. |
-| **Test Runs** | Plan-first, read-only viewer: pick a Plan's run (a real `runs/*.json` PlanRun record), see its suites' rollup, drill into one for per-test-case status, outputs, assertions, live auto-refresh while a run is in progress. |
+| **Test Runs** | A table of everything that was run (plan, suite or test case runs), with filters; open a run for its own page: status, progress, results per suite and test case, and the agent's activity. Live while a run is in progress. |
 
 Every tab's search box, and the active tab + open record itself, round-trip through
 `location.hash` -- a refresh, a bookmarked link, or the browser's back/forward buttons all land
@@ -82,13 +87,14 @@ Once you've reviewed the candidates, fill in the **Create Test Case & Fixture** 
 - **Test case ID** -- written to `testcases/<id>.json` and `testscripts/<id>.testscript.json`.
 - **Test case name** -- pre-filled from the recording's own name; edit freely.
 - **Description** -- optional.
-- **Fixture name** -- type a new one or pick from the autocomplete of existing fixture names
-  (e.g. `basic`). Written to `testdata/<id>.<name>.json`.
+- **Fixture name** -- pick an existing fixture to add this test case's values to it, or type a
+  new name to create one (`testdata/<name>.json`).
 
 **Create Test Case & Fixture** stays disabled until every required candidate has a value and all
-four fields above are filled. On success it writes all three files in one action; if the Test
-Case is created but the Fixture write fails for some reason, the error banner says so explicitly
--- you can still create the Fixture separately from the Fixtures tab using the same Test Case ID.
+four fields above are filled. On success it writes the test case and test script and adds the
+values to the fixture in one action; if the Test Case is created but saving its fixture values
+fails, the error banner says so explicitly -- you can still add the test case to a fixture from
+the Fixtures tab.
 
 ## 4. Test Cases: edit outputs and expectations
 
@@ -155,26 +161,40 @@ share a source recording), and not any Fixture/Suite that still references this 
 
 ## 5. Fixtures: manage test data
 
-The left pane groups every `testdata/*.json` file by the Test Case it belongs to (same
-"Invalid: ..." handling as Test Cases), so a scenario with several data variants (e.g. three
-vendors × three items) stays organized instead of one long flat list. **+ New fixture** switches
-the detail pane to create mode.
+A fixture is one named data set (one company, one scenario) holding values for every test case it
+covers, stored as `testdata/<name>.json`. The left pane lists the fixtures themselves, sorted by
+name; files that can't be read go in an **Invalid** folder. The search matches fixture names,
+descriptions, and the names or ids of the test cases inside them. **+ New fixture** asks only for
+a **Name** (what suites refer to, also the file name) and an optional **Description**; the new
+fixture then opens so you can add test cases to it.
 
-For a **new** fixture: pick a **Filename slug** (written to `testdata/<slug>.json` -- convention
-is `<testCaseId>.<name>`, e.g. `create-purchase-order.basic`, but nothing enforces it), a **Test
-case** from the dropdown, and an optional **Label** -- a short free-text description (distinct
-from the filename-safe slug) shown in the fixture's list entry so multiple variants for the same
-Test Case stay distinguishable at a glance. Once you pick a Test Case, the **Values** section
-below renders one field per its `inputs[]` -- label, required marker, placeholder from the
-input's recorded `example`, and its description as a hint underneath.
+Selecting a fixture shows its **General** section (name and description) and a **Test cases**
+table: one row per test case the fixture has values for, with how many values are set and a
+status (**Complete**, **N required missing**, or **Test case not found** when the test case was
+deleted). The table has its own search and pages once there are more than ten rows.
 
-**The Test case a Fixture targets can't be changed after creation** -- the field is locked on an
-existing Fixture; delete and recreate it against a different Test Case instead. This is
-deliberate: a Fixture's Values shape is entirely derived from its Test Case's `inputs[]`, so
-repointing it would silently invalidate every value already entered.
+- **Add test cases** opens a searchable list of the test cases that have no values in this fixture
+  yet; pick any number.
+- **Expand a row** to edit that test case's values: one small field per declared input, three to a
+  row, labelled with the control's readable label (the input name and description are in the
+  info toggletip). Required inputs are checked on blur and again on Save. Values the test case no
+  longer declares are kept and listed with a **Remove unused values** action. The header's expand
+  toggle opens or closes every row on the page.
+- **Remove from fixture** (the row's minus icon) asks for confirmation and names any suite that
+  binds this fixture for that test case.
 
-**Save**/**Delete** work the same as Test Cases (§4) -- Save confirms via toast, Delete asks for
-confirmation and removes only that one `testdata/*.json` file.
+**Save** checks every row and opens the ones with missing required values. Renaming the fixture
+in General also updates every suite binding that refers to the old name, and the toast says how
+many suites changed. **Duplicate** copies the saved fixture, every test case and value included,
+under a new name you choose, then opens the copy; unsaved edits are not copied. **Delete** asks for
+confirmation, names the suites that use the fixture, and removes its file.
+
+The **Fixtures** tab on a test case lists the fixtures that hold values for it, each linking here.
+
+**Older fixture files.** Fixtures stored in the earlier one-file-per-test-case format show as
+"(old format)" and open read-only, under a notice with a **Merge fixture files** action. It does
+the same as `trxa migrate-fixtures` (see MANUAL.md): one file per fixture, old files removed,
+nothing changed if two files conflict.
 
 ## 6. Suites: the dependency graph canvas
 
@@ -190,7 +210,9 @@ written to the suite file), and a **Reset layout** button (shown once you've mov
 clears them back to the automatic layered layout. Use the toolbar's dropdown + **Add** to add an
 existing Test Case as a new entry.
 
-Click a node to open its inspector:
+Point at a node (or Tab to it) to show its **Edit** and **×** icons in the top-right corner.
+**Edit** opens its inspector and **×** removes the entry; clicking or dragging the node itself
+only moves it:
 
 - **Legal entity** -- passed as the company on this entry's Test Case's *first* navigation call
   only; leave blank to stay in whatever company the run is already in.
@@ -204,7 +226,7 @@ Click a node to open its inspector:
   ever left waiting forever. Only shown for entries that have at least one dependency, since a
   root entry has nothing to gate on.
 - **Input bindings** -- one row per the Test Case's declared `inputs[]`, with a five-way picker:
-  **Unbound**, **Fixture** (pick one of the Test Case's fixtures, then a value key from it),
+  **Unbound**, **Fixture** (pick a fixture that has values for this Test Case, then a value key from it),
   **Output** (pick an upstream Test Case -- any transitive dependency, not just a direct one --
   and one of its declared outputs), **Literal** (type a value directly into the suite file), or
   **Auto** (Autogenerated -- no value here at all; the orchestrating LLM invents one at replay
@@ -249,42 +271,87 @@ running, since nothing beyond each suite's own Test Run is ever written.
 
 ## 8. Test Runs: view results
 
-The left pane groups by Plan, not by suite file: each Plan you've created is a header, and under
-it every PlanRun that belongs to it (see §7) is a clickable row showing when it started, newest
-first -- a search box filters by plan name. Selecting a run shows the plan-level rollup (the same
-Overall badge plus per-suite status/counts §7 describes), and clicking one of its suites drills
-into that suite's own detail below.
+**One row per run.** Whatever was started is one line: a plan run contains its suites and their
+test cases, a suite run contains its test cases, and a test case run is just that case. A suite
+run that belongs to a plan run is not listed on its own, and an agent run is not a second row
+either: it is folded into the run it created (its environment, company, depth and agent show on
+that row and on the run's page).
 
-That suite detail shows every test case in it: its status badge (`Passed`/`Failed`/`Blocked`/
-`Skipped`/`Running`/`Pending`), any captured `outputs[]` values, and every `expectations[]`
-assertion with a Pass/Fail badge and the `actual` value that was actually observed (an OData
-field, or the matched/missing UI message) -- the same evidence `replay-trxa-testplan` records
-when it calls `record-result`. A "failures only" toggle filters the per-test-case list down to
-just what needs attention. **While a run is still in progress, this view auto-refreshes itself
-every few seconds** -- no manual re-selecting needed to watch it happen live.
+**The table** shows each run's status, name, type (Plan, Suite, Test case), when it started, how
+long it took, its results ("7 passed, 1 failed"), the environment and company, and who ran it
+(GitHub Copilot, Claude Code, or the CLI). Search matches the name, the plan/suite/test case and
+the environment. Filters across the top narrow it by Type, Status, Started (today, last 7 or 30
+days), Run by and Environment; **Clear filters** resets them. Columns sort by clicking their
+header. Running runs always stay at the top, with a spinner and a progress bar. The table keeps
+its filters, sort and page while you open a run and come back.
 
-If any test case reports `tokensUsed` and/or `costUsd` (see MANUAL.md §7.8's "Token/cost
-reporting"), a **Tokens**/**Cost** tile appears alongside the Passed/Failed/Blocked/Skipped/Total
-summary row, showing the sum across the whole run; the same figures also show per-test-case in
-each result's meta line. Older runs recorded before this existed simply don't show these tiles --
-there's no "$0.00" placeholder for a run that never reported either.
+**Run names.** The Run dialog asks for a name, starting from the plan, suite or test case name so
+you can add what makes this run different ("Accounts Payable regression, PQU 10.0.48"). The name
+is saved in the run's own file (`runs/<id>.json` for a plan run, `testruns/<file>.json` for a suite
+or test case run), so the CLI keeps it too, and `trxa init-plan-run`/`init-run` take `--name` for
+runs started outside Studio. A run without a name is listed by what it ran. **Rename** on the
+run's page changes or clears it (not while a suite or test case run is still in progress).
 
-**Copy summary** (top-right of an open suite) copies that suite's results to your clipboard as
-both Markdown (for pasting into chat) and rich HTML (for pasting into email/Word/Docs, with status
-colors and Infolog severity preserved). **Export** offers the same content as a downloadable
-`.md` file, or **PDF** via the browser's own print dialog. **Delete** (same row) removes that
-suite's Test Run file entirely after a confirmation prompt -- unlike deleting a Test Case/
-Fixture/Suite/Plan, a Test Run has no other file that references it by id, so this can't break
-anything else. The plan-level rollup view has its own **Delete run**, which only removes the
-`runs/<id>.json` PlanRun record itself -- the underlying suite Test Run files aren't touched, so
-deleting a PlanRun just un-groups suites that already ran, it doesn't erase their results.
+**A run's page** opens from the table (or a link). The breadcrumb goes back to the table, and the
+arrows step to the previous/next run in the table's current order. The header shows the name,
+status, what was run and when, the environment, company, depth, who ran it and how long it took,
+then a progress bar ("6 of 8 test cases finished"). **Stop run** appears while an agent run is in
+progress. Below that:
 
-This tab is otherwise **read-only** -- there's no editing a run's contents, since it's a durable
-record of what a replay session actually did, not something to hand-edit. To produce a new one,
-start it from the Plans tab's rollup viewer (§7), then run each suite live per MANUAL.md §8's
-"Running a plan" procedure (itself the same per-suite `resolve-next`/`record-result` loop from
-§7.7, once per suite); this tab picks it up on its own (the list itself also polls periodically,
-so a run started from another session or the CLI appears without a manual refresh).
+- **Results**: for a plan run, a summary of its suites by status and a table of suites; a suite row
+  expands to that suite's test cases. For a suite or test case run, its test cases directly.
+  Each test case shows its status badge (`Passed`/`Failed`/`Blocked`/`Skipped`/`Running`/
+  `Pending`), captured `outputs[]`, and every `expectations[]` assertion with a Pass/Fail badge
+  and the `actual` value observed -- the same evidence `replay-trxa-testplan` records with
+  `record-result`. A "failures only" toggle narrows the list. Tokens/Cost tiles appear when test
+  cases report `tokensUsed`/`costUsd` (see MANUAL.md §7.8).
+- **Agent activity** (agent runs only): the failure or interruption reason if there was one, the
+  activity log of everything the agent did, how many tool calls the run's permissions denied, and
+  **Full log** to download the whole transcript.
+
+**Copy summary** copies results as Markdown and rich HTML (status colours and Infolog severity
+kept), titled with the run's name. **Export** downloads the same as `.md`, or **PDF** through the
+browser's print dialog (always in the light theme). **Delete** on a suite removes that Test Run
+file after a confirmation; a plan run's **Delete run** removes only the `runs/<id>.json` record,
+not its suites' Test Run files.
+
+**While a run is in progress**, wherever you are in Studio:
+
+- The header's run activity button turns into a spinner. Its panel lists each run in progress with
+  a progress bar, then the five most recent runs.
+- When an agent run ends, a notification says how it went ("Accounts payable regression: failed,
+  7 passed, 1 failed") with **View run**; it stays until you dismiss it.
+- The table and an open run page refresh on their own every few seconds, so a run started from
+  the CLI or another window appears without a manual refresh.
+
+Results are a durable record of what a replay did, so nothing on this tab edits them; only the name
+can change. To produce a new run, use **Run** on a plan, suite or test case (§8a), or the CLI
+procedure in MANUAL.md §8 "Running a plan".
+
+## 8a. Running with an AI agent
+
+Test Cases, Suites and Plans each have a **Run** button that hands the item to a GitHub Copilot
+agent, which replays it against the D365 session your `d365-erp-mcp` server is connected to.
+
+- **Readiness**: Run is disabled, with an "Agent not ready" link, until Settings > Agent runs shows
+  Copilot ready (CLI, sign-in, D365 MCP server, replay skill).
+- **Dialog**: name the run (see §8, "Run names"), enter the environment and company you *expect*
+  (the agent checks the live session first and stops if it differs), and choose the depth. **Navigation only** (default) blocks
+  every D365 tool that can change data. **Full run** can save and post real records; choosing it
+  and clicking Start is the confirmation.
+- **Progress**: starting a run opens its page in Test Runs (§8), which shows its progress and the
+  agent's activity live. **Stop run** cancels it. The run keeps going if you go elsewhere; the
+  header's run activity button and a notification at the end keep you informed. Reloading the
+  page re-attaches to a run still in progress.
+- Only one run at a time. Writes outside the working folder and non-`trxa` shell commands are
+  rejected. Run transcripts are saved under `agent-runs/` in the working folder (local only).
+- **Agent choice**: GitHub Copilot (default) or Claude Code, whichever is ready. Claude Code runs
+  in print mode with allow/deny tool lists enforcing the depth; it can't ask questions mid-run, so
+  on an environment mismatch it stops and reports.
+- Auth or connection failures show a plain message pointing at `copilot login` or Settings.
+- A run cut off by closing or restarting Studio is shown as failed ("interrupted") rather than
+  stuck on running. Stored transcripts cap each message at 4,000 characters and 2,000 events.
+  Nothing from a run is sent anywhere except to the agent you chose.
 
 ## 9. Cross-cutting UI notes
 
@@ -294,8 +361,9 @@ so a run started from another session or the CLI appears without a manual refres
 - **Error banners**: validation failures (missing required fields, a malformed filter, a suite DAG
   cycle, etc.) show as a banner at the top of the detail pane, not a toast -- toasts are for
   success, banners are for something you need to fix.
-- **List/detail split pane**: every tab shares the same layout -- a searchable/scrollable list on
-  the left, the selected item's editor (or, for Test Runs, read-only view) on the right. Nothing
+- **List/detail split pane**: every editing tab shares the same layout -- a searchable/scrollable
+  list on the left, the selected item's editor on the right. Test Runs is different: a full-width
+  table, and each run opens on its own page. Nothing
   you do in an editable tab's editor is saved until you click Save.
 - **URL/refresh persistence**: the active tab and whichever record you have open are reflected in
   the browser's address bar (`location.hash`), so refreshing the page, following a bookmarked
