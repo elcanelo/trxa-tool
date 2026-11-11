@@ -11,7 +11,7 @@ and records pass/fail results you can review later.
 
 ## What you need
 
-- **Node.js** 18.19 or later
+- **Node.js** 18.19 or later, if you install from npm (the Windows app doesn't need it)
 - **An agent runtime that can call MCP tools**, such as [Claude Code](https://claude.com/claude-code),
   Claude Cowork, or [Codex](https://developers.openai.com/codex)
 - **The `d365-erp-mcp` MCP server**: Microsoft's
@@ -23,28 +23,39 @@ and records pass/fail results you can review later.
 
 ## Install
 
-```sh
-npm install -g trxa-tool
-```
+There are two ways to install TRXA-TOOL. Both include TRXA Studio, the UI for building test
+cases, suites and plans, and both can run tests with an AI agent.
 
-This installs the `trxa` command.
+| | Windows app | npm package |
+|---|---|---|
+| **Best for** | Consultants and testers who work in Studio | Developers and technical users who also want the command line |
+| **Studio** | In its own window | In your browser (`trxa studio`) |
+| **Agent runs** | Yes | Yes |
+| **`trxa` commands in a terminal** | No | Yes |
+| **Needs Node.js** | No | Yes |
+| **Platforms** | Windows | Windows, macOS, Linux |
 
-### Windows desktop app (optional)
+### Windows app
 
-TRXA Studio, the UI for building test cases, suites and plans, is also available as a Windows
-app. Download `TRXA.Studio.Setup.<version>.exe` from the
-[Releases](https://github.com/elcanelo/trxa-tool/releases) page and run it. The app doesn't need
-Node.js. It shares its working folder setting with `trxa studio`; on a machine where Studio has
-never run, it starts at `Documents\TRXA Studio` (change it in Settings).
+Download `TRXA.Studio.Setup.<version>.exe` from the
+[Releases](https://github.com/elcanelo/trxa-tool/releases) page and run it. The app opens on a
+working folder in `Documents\TRXA Studio`; change it in Settings. **Settings > Agent runs** shows
+what an agent run still needs on your computer, and its **Install skill** button adds the replay
+skill to your working folder.
 
 The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC".
 Choose **More info**, then **Run anyway**.
 
-The app includes its own copy of the `trxa` command for agent runs, and Settings > Agent runs can
-install the replay skill into your working folder. To use the CLI commands below from your own
-terminal, install the npm package as well.
+### npm package
 
-## Quick start
+```sh
+npm install -g trxa-tool
+```
+
+This installs the `trxa` command, which includes Studio (`trxa studio`). If you install both, the
+app and `trxa studio` share the same working folder setting.
+
+## Quick start (npm package)
 
 Run these from your own project folder:
 

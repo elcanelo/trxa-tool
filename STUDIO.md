@@ -12,7 +12,7 @@ writes, and vice versa -- switch between them freely on the same files.
 ## 1. Starting Studio
 
 Studio runs from the CLI in your browser, or as the TRXA Studio Windows app (see README.md's
-"Windows desktop app"). The app starts its own Studio server on a free local port and shows it in
+"Install"). The app starts its own Studio server on a free local port and shows it in
 a window; everything below applies to both, except the `trxa studio` commands, the PID tracking
 and the fixed address.
 
