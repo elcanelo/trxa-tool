@@ -1,390 +1,435 @@
-# TRXA Studio manual
+# Use TRXA Studio
 
-Studio is a local browser UI for the same pipeline [MANUAL.md](MANUAL.md) walks through via the
-CLI: parsing a `.axtr` recording, drafting inputs, editing a Test Case's `outputs[]`/
-`expectations[]`, managing Fixtures, building Suites (including their dependency DAG and
-conditional-skip gates) and Plans, and reviewing Test Runs -- without hand-editing JSON. It runs
-the same code the CLI does, so anything Studio writes is exactly as valid as anything the CLI
-writes, and vice versa -- switch between them freely on the same files.
+TRXA Studio is the visual workspace for TRXA-TOOL. Use it to turn Dynamics 365 Finance and Supply
+Chain Management Task Recorder recordings into automated tests, organize the tests into suites and
+plans, run them with an AI agent, and review the results. You don't need to edit any files by hand.
 
----
+Studio is available as a Windows app and as a browser page that the npm package starts. Both work
+the same way. This article applies to both, except where a section says otherwise.
 
-## 1. Starting Studio
+In this article, you learn how to:
 
-Studio runs from the CLI in your browser, or as the TRXA Studio Windows app (see README.md's
-"Install"). The app starts its own Studio server on a free local port and shows it in
-a window; everything below applies to both, except the `trxa studio` commands, the PID tracking
-and the fixed address.
+- Start Studio and choose a working folder
+- Create a test case from a recording
+- Define what a test captures and checks
+- Manage test data with fixtures
+- Build suites and plans
+- Run a test with an AI agent
+- Review test runs
 
-```sh
-trxa studio          # starts the server + client in the background, opens your browser
-trxa studio stop     # shuts down the whole process tree (not just the top-level process)
-```
+## Prerequisites
 
-Running `studio` again while it's already up just reopens the browser instead of starting a
-second instance -- PID/log tracking lives in `~/.trxa-tool/studio-run/` (a per-user location, independent of
-where the tool is installed).
+- TRXA-TOOL installed, either the Windows app or the npm package. For instructions, see
+  [Step 1: Install TRXA-TOOL](SETUP.md#step-1-install-trxa-tool).
+- One or more Task Recorder recordings (`.axtr` files). Record them in Dynamics 365 with Task
+  recorder, or export them from a Business Process Modeler library in Lifecycle Services.
+- To run tests with an AI agent: an agent and a connection to Dynamics 365. Complete every step in
+  [Set up TRXA Studio for agent runs](SETUP.md).
 
-**Which project does it open?** Studio's data (`recordings/`, `testcases/`, `suites/`, etc.) lives
-under a *working folder* -- a real, persisted setting, not just "wherever you happened to run the
-command from." The first time Studio ever starts on a machine, it defaults to and remembers
-whatever directory `trxa studio` was run from; after that, it's whatever you last set it to.
-Change it anytime from the **Settings** tab (gear icon, top right) -- the switch takes effect
-immediately, no restart needed. Install location, working folder, and "wherever you happen to be
-running the command from" are three different things, and only the working folder setting decides
-which project's files Studio reads and writes.
+## Key concepts
 
-Studio binds to `127.0.0.1` only and opens at `http://localhost:5173`. **Never expose it on a
-network** -- it does unauthenticated filesystem writes by design (same trust model as the CLI:
-whoever can run it can write anywhere under the working folder's `testcases/`, `testdata/`,
-`testscripts/` directories).
+Studio works with seven kinds of records. Each one builds on the one before it.
 
-## 2. The six tabs, at a glance
+| Record | What it is | Folder |
+|---|---|---|
+| **Recording** | A Task Recorder file (`.axtr`) that captures the steps someone performed in Dynamics 365. | `recordings` |
+| **Test script** | The recording's steps, translated into actions that an agent can perform. Studio creates it for you. | `testscripts` |
+| **Test case** | One business scenario that passes or fails, such as "Create purchase order". It defines the test's inputs, the values to capture (outputs) and the checks to make (expectations). | `testcases` |
+| **Fixture** | A named set of test data, such as one company or one scenario. It holds input values for many test cases. | `testdata` |
+| **Suite** | Test cases that run together, in an order you define. A suite also says where each test case gets its input values. | `suites` |
+| **Plan** | A group of suites that run and report together, such as every suite for Accounts payable. | `plans` |
+| **Test run** | The result of running a test case, a suite or a plan. | `testruns`, `runs` |
 
-| Tab | Purpose |
+All records are files in Studio's *working folder*, so you can keep them in source control and use
+them with the `trxa` command line too. For the file formats, see the [TRXA-TOOL manual](MANUAL.md).
+
+## Start Studio
+
+### Start the Windows app
+
+- If you used the installer, open **TRXA Studio** from the **Start** menu.
+- If you use the portable version, run `TRXA Studio.exe` from the folder where you extracted it.
+
+The app opens in its own window. The first time, its working folder is `Documents\TRXA Studio`.
+
+### Start Studio in your browser
+
+1. Open a terminal in the folder that holds, or will hold, your recordings and tests.
+1. Run:
+
+   ```powershell
+   trxa studio
+   ```
+
+   Studio starts in the background and opens `http://127.0.0.1:4321` in your browser. If Studio is
+   already running, the command opens the browser page again instead of starting a second copy.
+
+1. To stop Studio, run:
+
+   ```powershell
+   trxa studio stop
+   ```
+
+The first time Studio starts on a computer, the folder you ran `trxa studio` from becomes the
+working folder. After that, Studio opens the working folder you last chose.
+
+> [!IMPORTANT]
+> Studio accepts connections only from your own computer, and it reads and writes files without
+> asking you to sign in. Don't make it reachable from a network.
+
+### Choose the working folder
+
+The working folder is where Studio reads and writes all your records. To change it:
+
+1. Select **Settings** (the gear icon in the upper-right corner).
+1. In **Folder path**, enter the full path of the folder you want.
+1. Select **Save**.
+
+Studio switches to the new folder right away, without a restart.
+
+![The Settings page, with the Working folder and Appearance sections.](media/studio/settings-working-folder.png)
+
+On the same page, **Appearance** sets the theme: **Dark**, **Light**, or **Match the operating
+system**.
+
+## Find your way around Studio
+
+The rail on the left side opens each page:
+
+| Page | Use it to |
 |---|---|
-| **Recordings** | Parse a `.axtr` file, draft inputs from it, and create a new Test Case + Fixture pair. |
-| **Test Cases** | Edit an existing Test Case's `outputs[]`/`expectations[]`, or delete it. |
-| **Fixtures** | Named data sets (`testdata/<name>.json`), each holding input values for many Test Cases. Create, duplicate, rename, delete. |
-| **Suites** | A drag-and-drop dependency-graph canvas for `suites/*.json` -- `dependsOn`, `inputBindings`, and conditional-skip (`runIf`) gates. |
-| **Plans** | Compose a `plans/*.json` from existing suites, with reorderable run order and a rollup-status viewer. |
-| **Test Runs** | A table of everything that was run (plan, suite or test case runs), with filters; open a run for its own page: status, progress, results per suite and test case, and the agent's activity. Live while a run is in progress. |
+| **Recordings** | Review a recording's steps and create a test case and fixture from it. |
+| **Test Cases** | Edit a test case's outputs and expectations, and see which fixtures hold its data. |
+| **Fixtures** | Create and edit sets of test data. |
+| **Suites** | Arrange test cases in run order and connect their data. |
+| **Plans** | Group suites, and see a combined result for each run. |
+| **Test Runs** | Review the results of every run. |
 
-Every tab's search box, and the active tab + open record itself, round-trip through
-`location.hash` -- a refresh, a bookmarked link, or the browser's back/forward buttons all land
-back where you were instead of resetting to the Recordings tab. The header also carries **Export
-library**/**Import library** buttons that bundle or restore the whole `recordings/`/`testcases/`/
-`testdata/`/`testscripts/`/`suites/`/`plans/`/`testruns/` tree as one zip (same as the CLI's
-`export`/`import` commands) -- useful for backing up or moving an installation.
+The buttons in the upper-right corner are, from left to right:
 
-Not here yet: creating a Test Case's `inputs[]`/`bindTo` after the fact -- that stays on the
-Recordings page's flow below.
+- **Run activity**: shows the runs in progress and the most recent runs.
+- **Export library**: downloads all your records as one zip file, for a backup or to move them to
+  another computer.
+- **Import library**: restores records from such a zip file.
+- **Settings**: the working folder, the theme, and agent readiness.
 
-## 3. Recordings: parse a `.axtr` file and draft a Test Case + Fixture
+Most pages share one layout: a searchable list on the left and the selected record on the right.
+Each record opens with a **General** section that holds its name and description. Changes aren't
+saved until you select **Save**, or press **Ctrl+S**. If you try to leave a page with unsaved
+changes, Studio asks you first.
 
-The left pane lists every `.axtr` file under `recordings/`, grouped into a folder tree matching
-their layout on disk (search flattens it to a filtered list with full paths, since matches from
-different folders no longer need visual grouping once you're searching). Click one to parse it.
+The address bar always reflects the page and record you have open. You can bookmark a record,
+refresh the page, or use the browser's **Back** button, and Studio returns to the same place.
 
-Once parsed, you'll see the recording's name, step count, and required-privilege count, followed
-by a step table: sequence, description, form, node type, and the suggested replay hint for that step
-(the tool it'd call during replay, a confidence badge, and a note when the mapping needed one).
-Steps with no hint show an "unmapped" badge -- rare, but worth reporting if you see one.
+## Create a test case from a recording
 
-Click **Suggest Inputs** to draft candidate inputs from the recording (same output as
-`trxa suggest-inputs`). Each candidate traces back to either a recorded value
-(`PropertyUserAction`) or a low-confidence grid-selection step, and renders as an editable row
-directly under the step it came from -- required candidates are marked with a red `*`. Edit the
-values here before creating the Test Case; whatever you type becomes that draft input's initial
-value in the Fixture you create alongside it.
+Studio creates a test case, its test script and its first fixture values from a recording in one
+step.
 
-**Caution:** candidate values are copied verbatim from the recording -- if it was made against
-real business data rather than demo data, review/scrub these before creating anything you intend
-to commit. See MANUAL.md's "Data hygiene" section.
+1. Copy your `.axtr` files into the working folder's `recordings` folder. You can use subfolders,
+   for example one per business area.
+1. Select **Recordings**, and then select a recording in the list.
 
-Once you've reviewed the candidates, fill in the **Create Test Case & Fixture** form:
+   Studio reads the recording and shows its steps. For each step, the **Tool** column shows the
+   action that the agent will use to replay it, and **Confidence** shows how sure Studio is about
+   that action.
 
-- **Test case ID** -- written to `testcases/<id>.json` and `testscripts/<id>.testscript.json`.
-- **Test case name** -- pre-filled from the recording's own name; edit freely.
-- **Description** -- optional.
-- **Fixture name** -- pick an existing fixture to add this test case's values to it, or type a
-  new name to create one (`testdata/<name>.json`).
+   ![The Recordings page, with the steps of a recording and the Suggest inputs button.](media/studio/studio-recordings.png)
 
-**Create Test Case & Fixture** stays disabled until every required candidate has a value and all
-four fields above are filled. On success it writes the test case and test script and adds the
-values to the fixture in one action; if the Test Case is created but saving its fixture values
-fails, the error banner says so explicitly -- you can still add the test case to a fixture from
-the Fixtures tab.
+1. Select **Suggest inputs**. Studio finds the values that were typed or selected in the recording.
+   These become the test case's *inputs*, the values that can change from one run to the next.
+1. Select **Create test case & fixture**.
+1. In the panel that opens, enter or check these values:
 
-## 4. Test Cases: edit outputs and expectations
+   | Field | Description |
+   |---|---|
+   | **Test case ID** | A short, unique ID, such as `create-purchase-order`. Studio uses it as the file name. |
+   | **Test case name** | A readable name. Studio fills it in from the recording. |
+   | **Description** | Optional. |
+   | **Fixture name** | Select an existing fixture to add this test case's values to, or enter a new name to create a fixture. |
+   | *One field per input* | The value to use for each input in this fixture. Studio fills them in from the recording. |
 
-The left pane groups every `testcases/*.json` file into a folder tree matching its source
-recording's location under `recordings/` (an entry that fails to parse/validate shows "Invalid:
-<error>" instead of crashing the list; one created before this grouping existed, or from a
-top-level recording, falls into an "Ungrouped" bucket). Click one to load it, along with its
-underlying `testscript.json` (used to populate the step pickers below).
+   ![The Create test case and fixture panel, with the test case fields and the input values.](media/studio/recordings-create-test-case.png)
 
-If the Test Case has `inputs[]`, they're shown read-only at the top with a reminder of the
-`{{paramName}}` substitution syntax you can use in a filter/value below (e.g.
-`CustomerAccount eq '{{customerAccount}}'`) -- editing inputs themselves stays on the Recordings
-page's flow (§3).
+1. Select **Create**.
 
-### Outputs
+Studio creates the test case and a notification links to it.
 
-Each output captures a value after some step, for a later Test Case in a suite to consume (see
-`{ "kind": "testCaseOutput", ... }` bindings in MANUAL.md §7). The **name** field is free text --
-whatever you call it here is what a downstream Test Case's binding refers back to.
+> [!IMPORTANT]
+> Input values come straight from the recording. If the recording was made with real business
+> data, such as real vendor accounts or amounts, replace those values before you share or commit
+> the fixture.
 
-Pick a **kind**:
+## Define what a test case captures and checks
 
-- **`odata`** -- query the entity via OData: `Entity set`, `Filter` (may use
-  `{{paramName}}`), `Field` to read. Preferred when there's a solid, unique business key to
-  filter by -- durable, works even after the session ends.
-- **`uiField` (form state)** -- read a value straight off the live form. Pick the step to read it
-  **after**; then either:
-  - **Control name** -- the exact AOT control name. Free at replay time (no extra query, the
-    value is already in that step's own response) and exactly reproducible. Auto-suggested from
-    the selected step when it acts on one control; otherwise pick from the autocomplete of every
-    control name seen anywhere in this script, or type your own.
-  - **Hint** (only used when Control name is blank) -- a plain-English description (e.g. "the
-    newly assigned purchase order number shown after clicking New"), for values Task Recorder
-    never captured because nobody clicked them -- typically an auto-assigned ID. The replaying
-    LLM resolves this against live form state during a run and is expected to write the resolved
-    control name back into this field for you, so it stays free/exact on every run after the
-    first.
+A test case passes only if its *expectations* hold. It can also capture *outputs*, values that a
+later test case in a suite needs, such as the number of a new purchase order.
 
-### Expectations
+Select **Test Cases**, and then select a test case. The page shows how many inputs, outputs,
+expectations and steps it has, and four tabs:
 
-Each expectation checks something must (or must not) hold after a step, for the Test Case to
-pass. Pick the step to check **after**, then a **kind**:
+- **Inputs** lists the test case's inputs. To use an input's value in a filter or an expected
+  value, type its name in double braces, for example `{{vendorAccount}}`. Inputs come from the
+  recording, so you change them on the **Recordings** page.
+- **Outputs** and **Expectations** are described in the following sections.
+- **Fixtures** lists the fixtures that hold values for this test case.
 
-- **`odata`** -- query an entity and compare `Expected field` against `Expected value` with a
-  `Comparator` (`equals`/`notEquals`/`contains`/`greaterThan`/`lessThan`).
-- **`uiMessage`** -- check `FormState.Messages` for an entry of the given **Severity**
-  (`Info`/`Warning`/`Error`) whose text contains **Pattern** as a plain substring, not a regex --
-  leave it blank to match any message of that severity regardless of text.
+### Add an output
 
-**Watch the `Should exist` checkbox carefully** -- it's easy to get backwards. If your
-expectation reads "no error appeared," you want `Severity: Error` with **`Should exist`
-unchecked**, not checked -- checking it asserts an Error-severity message *must* appear, the
-opposite of what "no error" usually means. (This exact mistake has shipped in a real test case before
-being caught during a live replay -- worth double-checking every time.)
+1. Select the **Outputs** tab, and then select **Add output**.
+1. In **Output name**, enter a name. A suite refers to the output by this name.
+1. Select an **Output kind**:
+   - **OData** reads the value from a data entity. Enter the **Entity set**, a **Filter** that finds
+     the record, and the **Field** to read. Use this kind when the record has a reliable business
+     key to filter on.
+   - **Form field** reads the value from the form after a step. Select the step in **After step**.
+     Then select the control in **Control name**, or, if you don't know the control name, describe
+     the value in **Hint**, for example "The new purchase order number shown after clicking New".
+     During a run, the agent finds the control and fills in its name for later runs.
+1. Select **Save**.
 
-### Saving and deleting
+![The Outputs tab of a test case, with a Form field output that reads the purchase order number.](media/studio/testcases-outputs.png)
 
-**Save** writes the file back (validated server-side the same way the CLI's
-`validate-testcase` command would reject a malformed one) and confirms with a toast. **Delete**
-asks for confirmation, then removes only `testcases/<id>.json` -- not the `testscript.json` it
-points to, since that file isn't guaranteed unique to one Test Case (a suite's test cases can
-share a source recording), and not any Fixture/Suite that still references this Test Case's ID
-(those will start failing to resolve; clean them up separately).
+### Add an expectation
 
-## 5. Fixtures: manage test data
+1. Select the **Expectations** tab, and then select **Add expectation**.
+1. In **Description**, describe the check. The description appears in the test results.
+1. Select the step in **Check after step**.
+1. Select an **Expectation kind**:
+   - **OData** queries a data entity and compares a field with a value. Enter the **Entity set**,
+     **Filter**, **Expected field**, **Comparator** and **Expected value**.
+   - **Message** checks the messages that Dynamics 365 showed. Select a **Severity**, and
+     optionally enter text in **Message contains**. Leave it empty to match any message of that
+     severity.
+1. Select **Save**.
 
-A fixture is one named data set (one company, one scenario) holding values for every test case it
-covers, stored as `testdata/<name>.json`. The left pane lists the fixtures themselves, sorted by
-name; files that can't be read go in an **Invalid** folder. The search matches fixture names,
-descriptions, and the names or ids of the test cases inside them. **+ New fixture** asks only for
-a **Name** (what suites refer to, also the file name) and an optional **Description**; the new
-fixture then opens so you can add test cases to it.
+![The Expectations tab of a test case, with a check that no error message appeared.](media/studio/testcases-expectations.png)
 
-Selecting a fixture shows its **General** section (name and description) and a **Test cases**
-table: one row per test case the fixture has values for, with how many values are set and a
-status (**Complete**, **N required missing**, or **Test case not found** when the test case was
-deleted). The table has its own search and pages once there are more than ten rows.
+> [!TIP]
+> To check that *no* error appeared, select **Severity** > **Error** and clear **Message should
+> appear**. If you select **Message should appear**, the test passes only when an error *does*
+> appear.
 
-- **Add test cases** opens a searchable list of the test cases that have no values in this fixture
-  yet; pick any number.
-- **Expand a row** to edit that test case's values: one small field per declared input, three to a
-  row, labelled with the control's readable label (the input name and description are in the
-  info toggletip). Required inputs are checked on blur and again on Save. Values the test case no
-  longer declares are kept and listed with a **Remove unused values** action. The header's expand
-  toggle opens or closes every row on the page.
-- **Remove from fixture** (the row's minus icon) asks for confirmation and names any suite that
-  binds this fixture for that test case.
+To delete a test case, select **Delete**. Studio deletes only the test case. Its test script stays,
+because other test cases can share it, and any suite or fixture that refers to the test case keeps
+the reference until you remove it.
 
-**Save** checks every row and opens the ones with missing required values. Renaming the fixture
-in General also updates every suite binding that refers to the old name, and the toast says how
-many suites changed. **Duplicate** copies the saved fixture, every test case and value included,
-under a new name you choose, then opens the copy; unsaved edits are not copied. **Delete** asks for
-confirmation, names the suites that use the fixture, and removes its file.
+## Manage test data with fixtures
 
-The **Fixtures** tab on a test case lists the fixtures that hold values for it, each linking here.
+A fixture is a named set of test data, such as one company or one scenario. It holds the input
+values for every test case it covers. To run the same tests with different data, create another
+fixture and choose it in the suite.
 
-**Older fixture files.** Fixtures stored in the earlier one-file-per-test-case format show as
-"(old format)" and open read-only, under a notice with a **Merge fixture files** action. It does
-the same as `trxa migrate-fixtures` (see MANUAL.md): one file per fixture, old files removed,
-nothing changed if two files conflict.
+### Create a fixture
 
-## 6. Suites: the dependency graph canvas
+1. Select **Fixtures**, and then select **New fixture** (the plus icon above the list).
+1. Enter a **Name** and, optionally, a **Description**. Suites refer to the fixture by its name.
+1. Select **Create**. The new fixture opens.
 
-The left pane lists every `suites/*.json` file. **+ New suite** switches the detail pane to
-create mode, asking for a **Filename slug** (written to `suites/<slug>.json`), a **Suite id** (the
-stable id a Plan references it by -- independent of the filename), and a **Name**.
+### Add test cases and values
 
-The main panel is a top-to-bottom flow canvas (`@xyflow/react`): one node per entry, arrows
-showing `dependsOn`. **Drag from a node's bottom handle to another node's top handle** to add a
-dependency; select an edge and press **Backspace or Delete** to remove one. Drag a node itself to
-reposition it -- positions are presentation-only (kept in your browser's `localStorage`, not
-written to the suite file), and a **Reset layout** button (shown once you've moved something)
-clears them back to the automatic layered layout. Use the toolbar's dropdown + **Add** to add an
-existing Test Case as a new entry.
+1. Select a fixture. The **Test cases** table lists each test case that the fixture holds values
+   for, with how many values are set and a status, such as **Complete**.
+1. To add test cases, select **Add test cases**, select one or more test cases, and then select
+   **Add**.
+1. To edit a test case's values, expand its row, and then enter the values. Required values are
+   checked when you leave each field.
+1. Select **Save**. Studio opens any row that still has a required value missing.
 
-Point at a node (or Tab to it) to show its **Edit** and **×** icons in the top-right corner.
-**Edit** opens its inspector and **×** removes the entry; clicking or dragging the node itself
-only moves it:
+![A fixture with two test cases, one expanded to show its input values.](media/studio/fixtures-test-cases.png)
 
-- **Legal entity** -- passed as the company on this entry's Test Case's *first* navigation call
-  only; leave blank to stay in whatever company the run is already in.
-- **Depends on** -- read-only list of what you've connected via the canvas.
-- **Run condition** -- an optional conditional-skip gate. Pick one of this entry's own
-  dependencies from the **Only run if** dropdown (or "Always run" to clear the condition), then
-  an **output** that dependency declares, a **comparator** (`equals`/`notEquals`/`contains`/
-  `greaterThan`/`lessThan`), and an **expected value**. If the condition evaluates false at replay
-  time, this entry is recorded `"skipped"` instead of running -- not a pass, not a failure. A
-  downstream entry that depends on a skipped one is itself reported `"blocked"`, so nothing is
-  ever left waiting forever. Only shown for entries that have at least one dependency, since a
-  root entry has nothing to gate on.
-- **Input bindings** -- one row per the Test Case's declared `inputs[]`, with a five-way picker:
-  **Unbound**, **Fixture** (pick a fixture that has values for this Test Case, then a value key from it),
-  **Output** (pick an upstream Test Case -- any transitive dependency, not just a direct one --
-  and one of its declared outputs), **Literal** (type a value directly into the suite file), or
-  **Auto** (Autogenerated -- no value here at all; the orchestrating LLM invents one at replay
-  time using the input's own description/example as guidance, typically for a business key that
-  just needs to be unique per run).
+Other actions:
 
-**Save**/**Delete** work the same as other tabs -- Save validates server-side (including the same
-DAG cycle/unknown-id check `validate-suite` runs on the CLI), Delete asks for confirmation and
-removes only that one `suites/*.json` file.
+- **Remove from fixture** (the minus icon on a row) removes that test case's values. Studio names
+  any suite that uses them.
+- **Duplicate** copies the saved fixture, with all its test cases and values, under a new name.
+- Renaming a fixture in **General** also updates every suite that uses it.
+- **Delete** deletes the fixture. Studio names the suites that use it before you confirm.
 
-## 7. Plans: group suites for combined reporting
+> [!NOTE]
+> Fixtures created by TRXA-TOOL 0.1 stored one test case per file. Studio shows those files as
+> **(old format)** and opens them read-only. Select **Merge fixture files** to convert them. Studio
+> makes no changes if two old files hold values for the same test case under the same fixture name.
 
-The left pane lists every `plans/*.json` file. **+ New plan** switches to create mode, asking for
-a **Filename slug**, **Plan id**, **Name**, and **Description**.
+## Build a suite
 
-The editor is a two-pane picker: **Available suites** (with its own search) on the left, each
-with a **+ Add** button; **In this plan (run order)** on the right, each entry with move-earlier/
-move-later/remove controls -- array order is the suggested run order, there's no dependency graph
-between suites (if two suites need to share data, they belong in one suite instead).
+A suite runs test cases in order and passes data between them. For example, a purchase order suite
+can create an order, then confirm, receive and invoice that same order.
 
-Below the editor, a **rollup-status viewer** shows a combined pass/fail verdict across every suite
-in the plan for one PlanRun. **Start new run** creates a real, persisted `runs/<id>.json` record
-(`{id, planId, startedAt}`) with an auto-generated id; the **Run** dropdown lists every PlanRun
-that belongs to this plan, newest first, by its actual start time. Run
-each of the plan's suites (by hand or via the replay skill) using that PlanRun's id as the
-`<runId>` in `testruns/<suiteId>-<runId>.json`, exactly as the CLI's `init-plan-run` +
-`init-run` sequence expects (see MANUAL.md §8).
+### Create a suite
 
-For the selected run, each suite gets one of four statuses: **missing** (no
-`testruns/<suiteId>-<runId>.json` exists at all -- that suite hasn't been run yet under this
-PlanRun), **incomplete** (the file exists, but some test case in it hasn't reached a terminal
-status yet), **failed** (every test case reached a terminal status, and at least one is
-`failed`/`blocked`), or **passed** (every test case terminal, none failed or blocked). The plan's
-own **Overall** badge then picks the worst case across all its suites, in that same order: any
-suite `failed` → **has-failures**; else any `incomplete` → **incomplete**; else any `missing` →
-**missing-runs**; else → **all-passed**. This is the same logic the CLI's
-`plan-status` command uses -- a pure, read-only computation over
-already-existing Test Run files, safe to check as often as you like while suites are still
-running, since nothing beyond each suite's own Test Run is ever written.
+1. Select **Suites**, and then select **New suite** (the plus icon above the list).
+1. Enter these values, and then select **Create**:
 
-**Save**/**Delete** work the same as Suites.
+   | Field | Description |
+   |---|---|
+   | **File name** | The suite's file name, such as `purchase-order-lifecycle`. |
+   | **Suite ID** | The ID that plans use to refer to the suite. |
+   | **Name** | A readable name. |
+   | **Description** | Optional. |
 
-## 8. Test Runs: view results
+### Arrange test cases
 
-**One row per run.** Whatever was started is one line: a plan run contains its suites and their
-test cases, a suite run contains its test cases, and a test case run is just that case. A suite
-run that belongs to a plan run is not listed on its own, and an agent run is not a second row
-either: it is folded into the run it created (its environment, company, depth and agent show on
-that row and on the run's page).
+The suite's canvas shows each test case as a box. Arrows show the order: a test case runs only
+after every test case it depends on has passed.
 
-**The table** shows each run's status, name, type (Plan, Suite, Test case), when it started, how
-long it took, its results ("7 passed, 1 failed"), the environment and company, and who ran it
-(GitHub Copilot, Claude Code, or the CLI). Search matches the name, the plan/suite/test case and
-the environment. Filters across the top narrow it by Type, Status, Started (today, last 7 or 30
-days), Run by and Environment; **Clear filters** resets them. Columns sort by clicking their
-header. Running runs always stay at the top, with a spinner and a progress bar. The table keeps
-its filters, sort and page while you open a run and come back.
+1. In **Add a test case**, select a test case to add it to the canvas.
+1. To make one test case depend on another, drag from the bottom handle of the first box to the top
+   handle of the box that should run after it.
+1. To remove a dependency, select its arrow, and then press **Delete** or **Backspace**.
+1. Select **Save**.
 
-**Run names.** The Run dialog asks for a name, starting from the plan, suite or test case name so
-you can add what makes this run different ("Accounts Payable regression, PQU 10.0.48"). The name
-is saved in the run's own file (`runs/<id>.json` for a plan run, `testruns/<file>.json` for a suite
-or test case run), so the CLI keeps it too, and `trxa init-plan-run`/`init-run` take `--name` for
-runs started outside Studio. A run without a name is listed by what it ran. **Rename** on the
-run's page changes or clears it (not while a suite or test case run is still in progress).
+You can drag the boxes to arrange them. The layout is saved only in your browser. To return to the
+automatic layout, select **Reset layout**.
 
-**A run's page** opens from the table (or a link). The breadcrumb goes back to the table, and the
-arrows step to the previous/next run in the table's current order. The header shows the name,
-status, what was run and when, the environment, company, depth, who ran it and how long it took,
-then a progress bar ("6 of 8 test cases finished"). **Stop run** appears while an agent run is in
-progress. Below that:
+![A suite canvas with four test cases connected in order.](media/studio/suites-canvas.png)
 
-- **Results**: for a plan run, a summary of its suites by status and a table of suites; a suite row
-  expands to that suite's test cases. For a suite or test case run, its test cases directly.
-  Each test case shows its status badge (`Passed`/`Failed`/`Blocked`/`Skipped`/`Running`/
-  `Pending`), captured `outputs[]`, and every `expectations[]` assertion with a Pass/Fail badge
-  and the `actual` value observed -- the same evidence `replay-trxa-testplan` records with
-  `record-result`. A "failures only" toggle narrows the list. Tokens/Cost tiles appear when test
-  cases report `tokensUsed`/`costUsd` (see MANUAL.md §7.8).
-- **Agent activity** (agent runs only): the failure or interruption reason if there was one, the
-  activity log of everything the agent did, how many tool calls the run's permissions denied, and
-  **Full log** to download the whole transcript.
+### Set up a test case in the suite
 
-**Copy summary** copies results as Markdown and rich HTML (status colours and Infolog severity
-kept), titled with the run's name. **Export** downloads the same as `.md`, or **PDF** through the
-browser's print dialog (always in the light theme). **Delete** on a suite removes that Test Run
-file after a confirmation; a plan run's **Delete run** removes only the `runs/<id>.json` record,
-not its suites' Test Run files.
+Point to a box and select its **Edit** icon to open its settings. To remove the test case from the
+suite, select the **×** icon or **Remove from suite**.
 
-**While a run is in progress**, wherever you are in Studio:
+| Setting | Description |
+|---|---|
+| **Legal entity** | Optional. The company to open the test case in. Leave it empty to stay in the current company. |
+| **Depends on** | The test cases that must pass first. Select **×** on one to remove that dependency. |
+| **Run condition** | Optional. In **Only run if**, select a dependency, one of its outputs, a comparator and a value. If the condition isn't met, the test case is *skipped*, which is neither a pass nor a failure. Test cases that depend on a skipped test case are *blocked*. |
+| **Input bindings** | Where each input gets its value. See the following table. |
 
-- The header's run activity button turns into a spinner. Its panel lists each run in progress with
-  a progress bar, then the five most recent runs.
-- When an agent run ends, a notification says how it went ("Accounts payable regression: failed,
-  7 passed, 1 failed") with **View run**; it stays until you dismiss it.
-- The table and an open run page refresh on their own every few seconds, so a run started from
-  the CLI or another window appears without a manual refresh.
+For each input, select a **Source**:
 
-Results are a durable record of what a replay did, so nothing on this tab edits them; only the name
-can change. To produce a new run, use **Run** on a plan, suite or test case (§8a), or the CLI
-procedure in MANUAL.md §8 "Running a plan".
+| Source | The value comes from |
+|---|---|
+| **Unbound** | Nowhere yet. A required input must be bound before the suite can run. |
+| **Fixture value** | A fixture that holds values for this test case. |
+| **Output of an upstream test case** | An output of a test case that runs earlier in the suite, such as the new purchase order number. |
+| **Literal value** | A value that you type into the suite. Use it for constants, not for business data. |
+| **Autogenerated** | The agent, which invents a value during the run. Use it for values that only need to be unique, such as a new vendor account. |
 
-## 8a. Running with an AI agent
+![The settings panel for a test case in a suite, with its dependency, run condition and input bindings.](media/studio/suites-inspector.png)
 
-Test Cases, Suites and Plans each have a **Run** button that hands the item to a GitHub Copilot
-agent, which replays it against the D365 session your `d365-erp-mcp` server is connected to.
+Select **Done** to close the panel, and then select **Save**. Studio checks the suite when you
+save, for example for test cases that depend on each other in a loop.
 
-- **Readiness**: Run is disabled, with an "Agent not ready" link, until Settings > Agent runs shows
-  Copilot ready (the `trxa` command, Copilot CLI and sign-in, D365 MCP server, replay skill). The
-  agent drives each run with `trxa`, so a missing `trxa` blocks runs; the Windows app includes its
-  own. When the replay skill is missing, **Install skill** on its row installs it into the working
-  folder (the same as `trxa init-skill`).
-- **Dialog**: name the run (see §8, "Run names"), enter the environment and company you *expect*
-  (the agent checks the live session first and stops if it differs), and choose the depth. **Navigation only** (default) blocks
-  every D365 tool that can change data. **Full run** can save and post real records; choosing it
-  and clicking Start is the confirmation.
-- **Progress**: starting a run opens its page in Test Runs (§8), which shows its progress and the
-  agent's activity live. **Stop run** cancels it. The run keeps going if you go elsewhere; the
-  header's run activity button and a notification at the end keep you informed. Reloading the
-  page re-attaches to a run still in progress.
-- Only one run at a time. Writes outside the working folder and non-`trxa` shell commands are
-  rejected. Run transcripts are saved under `agent-runs/` in the working folder (local only).
-- **Agent choice**: GitHub Copilot (default) or Claude Code, whichever is ready. Claude Code runs
-  in print mode with allow/deny tool lists enforcing the depth; it can't ask questions mid-run, so
-  on an environment mismatch it stops and reports.
-- Auth or connection failures show a plain message pointing at `copilot login` or Settings.
-- A run cut off by closing or restarting Studio is shown as failed ("interrupted") rather than
-  stuck on running. Stored transcripts cap each message at 4,000 characters and 2,000 events.
-  Nothing from a run is sent anywhere except to the agent you chose.
+## Group suites into a plan
 
-## 9. Cross-cutting UI notes
+A plan groups suites that you run and report on together. The suites in a plan don't share data
+or depend on each other. If two suites need to share data, combine them into one suite.
 
-- **Toasts**: every Save on an editable tab (Recordings/Test Cases/Fixtures/Suites/Plans) confirms
-  with a small message that fades in at the top of the screen, holds briefly, then fades out on
-  its own -- no need to dismiss it. Test Runs has nothing to save, so it never shows one.
-- **Error banners**: validation failures (missing required fields, a malformed filter, a suite DAG
-  cycle, etc.) show as a banner at the top of the detail pane, not a toast -- toasts are for
-  success, banners are for something you need to fix.
-- **List/detail split pane**: every editing tab shares the same layout -- a searchable/scrollable
-  list on the left, the selected item's editor on the right. Test Runs is different: a full-width
-  table, and each run opens on its own page. Nothing
-  you do in an editable tab's editor is saved until you click Save.
-- **URL/refresh persistence**: the active tab and whichever record you have open are reflected in
-  the browser's address bar (`location.hash`), so refreshing the page, following a bookmarked
-  link, or using back/forward all restore the same screen instead of resetting to Recordings.
+1. Select **Plans**, and then select **New plan** (the plus icon above the list).
+1. Enter a **File name**, **Plan ID**, **Name** and, optionally, a **Description**, and then select
+   **Create**.
+1. Select **Add suites**, select the suites to include, and then select **Add**.
+1. Use the up and down arrows to set the run order, and the minus icon to remove a suite.
+1. Select **Save**.
 
-## 10. Troubleshooting
+Under **Rollup status**, select a run in **Run** to see each suite's status and an **Overall**
+result. A suite is *missing* if it hasn't run yet in that plan run, *incomplete* while it's
+running, *failed* if any test case failed or was blocked, and *passed* otherwise. The **Overall**
+result shows the worst status of any suite.
 
-- **Port 5173 (or 4321) already in use**: something else is already running there -- check
-  `~/.trxa-tool/studio-run/` for a stale PID, or run `trxa studio stop` first. If neither
-  clears it, something outside Studio's own tracking is holding the port; find and stop it
-  manually (Task Manager on Windows, `lsof -i :5173` on macOS/Linux).
-- **A recording/Test Case/Fixture/Suite/Plan doesn't show up**: those lists load once, when you
-  open the tab -- refresh if you added a file outside Studio (e.g. via the CLI or by hand) while
-  it was open. Test Runs is the exception: both its list and an open run poll periodically on
-  their own, so a run started elsewhere (another session, the CLI) appears without a manual
-  refresh.
-- **"Invalid: ..." in a list**: that file failed schema validation -- the error message is the
-  same one `validate-testcase`/`validate-fixture`/`validate-suite`/`validate-plan` would give you
-  on the CLI. Fix it by hand or via the CLI; Studio can't open an invalid file for editing.
-- **Can't delete a dependency connection on the Suites canvas**: click the connection to select
-  it, then press **Backspace or Delete**.
+![A plan with two suites in run order, and the rollup status of a completed run.](media/studio/plans-editor.png)
+
+## Run a test with an AI agent
+
+Test cases, suites and plans each have a **Run** button. It hands the item to an AI agent, which
+replays it in Dynamics 365 through the MCP connection you set up.
+
+Before you begin, complete [Set up TRXA Studio for agent runs](SETUP.md). If an item isn't ready,
+the **Run** button is unavailable and an **Agent not ready** link opens **Settings**.
+
+1. Open the test case, suite or plan, and then select **Run**.
+1. In the dialog, enter these values:
+
+   | Field | Description |
+   |---|---|
+   | **Run name** | How you find the run later. Studio starts with the item's name. Add what makes this run different, such as the update you're testing. |
+   | **Agent** | **GitHub Copilot** or **Claude Code**. Only agents that are ready can run. |
+   | **Expected environment** | The environment you expect the agent to be connected to, such as `contoso-sandbox`. |
+   | **Expected company** | The company you expect, such as `USMF`. |
+   | **How far to run** | **Navigation only** opens forms and reads values. Nothing is saved, posted, created or deleted. **Full run** performs every step, including saving and posting. |
+
+   ![The Run suite with AI agent dialog.](media/studio/run-dialog.png)
+
+1. Select **Start navigation run** or **Start full run**.
+
+Before it does anything else, the agent checks that it's connected to the environment and company
+you entered. If they don't match, it stops and reports why. The agent runs unattended and never
+asks questions.
+
+> [!IMPORTANT]
+> A full run creates, saves and posts real records in the connected environment. Selecting
+> **Start full run** is your confirmation. Use a test or sandbox environment.
+
+While the run is in progress:
+
+- Studio opens the run's page in **Test Runs**, which updates as the agent works. To cancel the run,
+  select **Stop run**.
+- You can go to other pages. **Run activity**, in the upper-right corner, shows a progress bar for
+  the run.
+- When the run ends, a notification shows the result, with a **View run** link.
+
+Only one agent run can be in progress at a time. During a run, the agent can't write files outside
+the working folder or run shell commands other than `trxa`. Studio saves each run's transcript in
+the working folder's `agent-runs` folder. It isn't sent anywhere except to the agent you chose.
+
+## Review test runs
+
+Select **Test Runs** to see every run: the test cases, suites and plans run from Studio, by an agent
+in a terminal, or with the `trxa` command line.
+
+![The Test Runs table, with a passed and a failed plan run.](media/studio/testruns-list.png)
+
+Each run is one row. A plan run includes its suites, and a suite run includes its test cases. Runs
+in progress stay at the top. Use the search box and the **Type**, **Status**, **Started** and **Run
+by** filters to find a run (an **Environment** filter appears once runs record one), and select a column heading to sort by it.
+
+Select a run's name to open its page. The page shows the run's status, who ran it and how long it
+took, a progress bar, and a summary of the results.
+
+- For a plan run, expand a suite to see its test cases.
+- Expand a test case to see its **Inputs**, captured **Outputs**, the **Assertions** that were
+  checked (each with the value the agent observed), and the **Infolog** messages Dynamics 365 showed.
+- Turn on **Show failures only** to hide the test cases that passed.
+
+![A plan run's page, with one suite expanded to show its four test cases.](media/studio/testrun-details.png)
+
+> [!NOTE]
+> **Screenshot to add:** `media/studio/testrun-test-case.png`. A failed test case expanded on a
+> run's page, showing the **Assertions** tab with a failed check and the observed value.
+
+For a run started by an agent from Studio, the **Agent activity** tab shows what the agent did,
+the reason if the run failed or was interrupted, and how many actions the run's permissions
+blocked. Select **Full log** to download the complete transcript.
+
+> [!NOTE]
+> **Screenshot to add:** `media/studio/testrun-agent-activity.png`. The **Agent activity** tab of a
+> run that an agent started from Studio.
+
+To share results:
+
+- **Copy run summary** copies the results as formatted text that you can paste into an email, a
+  chat or a work item.
+- **Export run** downloads the results as **Markdown (.md)**, or prints them to **PDF**.
+- **Rename** changes the run's name.
+
+A run's results are a record of what happened, so you can't edit them. To get new results, run the
+test again. **Delete run** deletes a plan run's record. To delete one suite's results, use
+**Delete** on that suite.
+
+## Troubleshoot
+
+| Problem | Solution |
+|---|---|
+| `trxa studio` reports that the port is in use | Run `trxa studio stop`, and then start Studio again. If the port is still in use, another program is using port 4321. To use a different port, set the `STUDIO_SERVER_PORT` environment variable before you start Studio. |
+| A record you added outside Studio doesn't appear | Lists load when you open a page. Refresh the page. **Test Runs** refreshes on its own every few seconds. |
+| A list shows **Invalid** for a file | The file doesn't match the expected format, and Studio can't open it. The message describes the problem. Fix the file in a text editor, or check it with the matching `trxa validate-...` command. |
+| The **Run** button is unavailable | An item in **Settings** > **Agent runs** isn't ready. See [Troubleshoot](SETUP.md#troubleshoot) in the setup article. |
+| A run fails right away with a sign-in or connection message | Sign in to the agent again (`copilot login`, or run `claude`), and check the MCP connection. See [Step 5](SETUP.md#step-5-connect-the-agent-to-dynamics-365). |
+| A run shows as failed with the reason **interrupted** | Studio was closed or restarted while the run was in progress. Run the test again. |
+
+## Related content
+
+- [Set up TRXA Studio for agent runs](SETUP.md)
+- [TRXA-TOOL manual](MANUAL.md): file formats and the `trxa` command line
+- [Use Model Context Protocol for finance and operations apps](https://learn.microsoft.com/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp)
