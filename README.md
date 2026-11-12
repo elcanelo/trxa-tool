@@ -72,6 +72,15 @@ To report a bug, or a recording that TRXA-TOOL can't handle, open an issue at
 [github.com/elcanelo/trxa-tool/issues](https://github.com/elcanelo/trxa-tool/issues). Don't attach
 recordings or test files that contain real business data.
 
+## Source code
+
+TRXA-TOOL is closed source for now. The product is still evolving, and keeping the source
+private while new features are planned lets the design change without breaking promises to
+contributors. This repository holds the documentation and the issue tracker.
+
+Feedback is welcome. To report a problem or suggest a feature, open an
+[issue](https://github.com/elcanelo/trxa-tool/issues).
+
 ## License
 
 TRXA-TOOL is proprietary software. Its use is governed by the end-user license agreement in
