@@ -81,6 +81,10 @@ contributors. This repository holds the documentation and the issue tracker.
 Feedback is welcome. To report a problem or suggest a feature, open an
 [issue](https://github.com/elcanelo/trxa-tool/issues).
 
+To hear about new versions, go to the [trxa-tool repository](https://github.com/elcanelo/trxa-tool),
+select **Watch** > **Custom**, select **Releases**, and then select **Apply**. GitHub emails you
+each time a new version is published.
+
 ## License
 
 TRXA-TOOL is proprietary software. Its use is governed by the end-user license agreement in
