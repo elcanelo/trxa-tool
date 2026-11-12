@@ -73,7 +73,7 @@ The app opens in its own window. The first time, its working folder is `Document
 The first time Studio starts on a computer, the folder you ran `trxa studio` from becomes the
 working folder. After that, Studio opens the working folder you last chose.
 
-> [!IMPORTANT]
+> [!WARNING]
 > Studio accepts connections only from your own computer, and it reads and writes files without
 > asking you to sign in. Don't make it reachable from a network.
 
@@ -155,7 +155,7 @@ step.
 
 Studio creates the test case and a notification links to it.
 
-> [!IMPORTANT]
+> [!WARNING]
 > Input values come straight from the recording. If the recording was made with real business
 > data, such as real vendor accounts or amounts, replace those values before you share or commit
 > the fixture.
@@ -357,7 +357,7 @@ Before it does anything else, the agent checks that it's connected to the enviro
 you entered. If they don't match, it stops and reports why. The agent runs unattended and never
 asks questions.
 
-> [!IMPORTANT]
+> [!WARNING]
 > A full run creates, saves and posts real records in the connected environment. Selecting
 > **Start full run** is your confirmation. Use a test or sandbox environment.
 
@@ -394,17 +394,9 @@ took, a progress bar, and a summary of the results.
 
 ![A plan run's page, with one suite expanded to show its four test cases.](media/studio/testrun-details.png)
 
-> [!NOTE]
-> **Screenshot to add:** `media/studio/testrun-test-case.png`. A failed test case expanded on a
-> run's page, showing the **Assertions** tab with a failed check and the observed value.
-
 For a run started by an agent from Studio, the **Agent activity** tab shows what the agent did,
 the reason if the run failed or was interrupted, and how many actions the run's permissions
 blocked. Select **Full log** to download the complete transcript.
-
-> [!NOTE]
-> **Screenshot to add:** `media/studio/testrun-agent-activity.png`. The **Agent activity** tab of a
-> run that an agent started from Studio.
 
 To share results:
 

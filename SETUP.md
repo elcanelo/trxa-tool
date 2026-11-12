@@ -1,7 +1,7 @@
 # Set up TRXA Studio for agent runs
 
 This article explains how to install and configure everything TRXA Studio needs to replay tests
-against Dynamics 365 Finance and Supply Chain Management (finance and operations apps) with an AI
+against Dynamics 365 Finance and Supply Chain Management with an AI
 agent. When you finish, **Settings** > **Agent runs** in Studio shows every item as ready, and the
 **Run** button on test cases, suites and plans is available.
 
@@ -36,7 +36,7 @@ Before you begin, make sure that you have:
 - Help from a **Microsoft Entra ID administrator** and a **finance and operations system
   administrator** for [Step 4](#step-4-prepare-the-dynamics-365-environment), if you aren't one.
 
-> [!IMPORTANT]
+> [!WARNING]
 > Use a test or sandbox environment. A full run can save and post real records. Never connect an
 > agent to a production environment for testing.
 
@@ -267,7 +267,7 @@ The connector reads four settings:
 | `D365_CLIENT_ID` | The **Application (client) ID** from the app registration |
 | `D365_CLIENT_SECRET` | The client secret **Value** from the app registration |
 
-> [!IMPORTANT]
+> [!WARNING]
 > Name the server `d365-erp-mcp`, exactly as shown in the following examples. The replay skill and
 > the Studio readiness check look for that name.
 
@@ -318,7 +318,7 @@ claude mcp add d365-erp-mcp -e D365_URL=https://contoso.operations.dynamics.com 
 Claude Code confirms with `Added stdio MCP server d365-erp-mcp`. The `-s user` option makes the
 server available in every folder, including the working folder that Studio runs the agent in.
 
-> [!IMPORTANT]
+> [!WARNING]
 > These settings store the client secret as plain text in your user profile
 > (`.copilot\mcp-config.json` or `.claude.json`). Don't share these files or commit them to source
 > control. When the secret expires, create a new one in Entra ID and update the setting.
