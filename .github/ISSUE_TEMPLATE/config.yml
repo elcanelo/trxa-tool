@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup guide
+    url: https://github.com/elcanelo/trxa-tool/blob/master/SETUP.md
+    about: Install TRXA-TOOL and an agent, and connect the agent to Dynamics 365.
+  - name: Studio guide
+    url: https://github.com/elcanelo/trxa-tool/blob/master/STUDIO.md
+    about: Create test cases, suites and plans, run them, and review the results.
